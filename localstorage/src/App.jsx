@@ -4,6 +4,8 @@ import Form from 'react-bootstrap/Form';
 import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
 import { getUsers } from './utils/index.js';
+import Swal from 'sweetalert2';
+import { setlocal } from './index.js';
 function App() {
   const [user, setusers] = useState({
     name: '',
@@ -22,20 +24,27 @@ const [recentdel,setRecentdel]=useState([]);
     setusers({ ...user, [e.target.name]: e.target.value });
   };
 
-  const handleDelete = (id) => {
-    const redel=record.find((item)=>item.id === id);
-   
+ const handleDelete = (id) => {
+  Swal.fire({
+    title: 'Are you sure?',
+    text: "You won't be able to recover this easily!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#d33',
+    cancelButtonColor: '#3085d6',
+    confirmButtonText: 'Yes, delete it!'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      const redel = record.find((item) => item.id === id);
+      setRecentdel([...recentdel, redel]);
 
-    const olddata=[...recentdel,redel];
-    console.log(olddata);
-  setRecentdel([...recentdel,redel]);
-    const updated = record.filter((item) => item.id !== id);
+      const updated = record.filter((item) => item.id !== id);
+      setrecord(updated);
 
-    // /console.log(redel);
-    
-    setrecord(updated);
-  };
-
+      Swal.fire('Deleted!', 'User has been deleted.', 'success');
+    }
+  });
+};
 const handleRecover = (item) => {
  
   setrecord([...record, item]);
@@ -50,40 +59,126 @@ const handleRecover = (item) => {
     setusers(selected);
     setEdituser(true);
   };
+
 const handleSubmit = (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (edit) {
-      const updated = record.map((rec) => (rec.id === user.id ? user : rec));
-      setrecord(updated);
-      setEdituser(false);
-    } else {
-      const obj = { ...user, id: Date.now() };
-      setrecord([...record, obj]);
-    }
+  if (!validateForm()) return;
 
-    setusers({
-      name: '',
-      lname: '',
-      email: '',
-      pass: '',
-      add: '',
-      state: '',
-      city: ''
+  if (edit) {
+    const updated = record.map((rec) =>
+      rec.id === user.id ? user : rec
+    );
+    setrecord(updated);
+    setEdituser(false);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Updated!',
+      text: 'User updated successfully',
     });
-  };
 
- 
+  } else {
+    const obj = { ...user, id: Date.now() };
+    setrecord([...record, obj]);
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Added!',
+      text: 'User added successfully',
+    });
+  }
+
+  setusers({
+    name: '',
+    lname: '',
+    email: '',
+    pass: '',
+    add: '',
+    state: '',
+    city: ''
+  });
+};
+  const validateForm = () => {
+  if (!user.name) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Name Required',
+      text: 'Please fill the name field',
+    });
+    return false;
+  }
+
+  if (!user.lname) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Last Name Required',
+      text: 'Please fill the last name field',
+    });
+    return false;
+  }
+
+  if (!user.email) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Email Required',
+      text: 'Please fill the email field',
+    });
+    return false;
+  }
+
+  if (!user.pass) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Password Required',
+      text: 'Please fill the password field',
+    });
+    return false;
+  }
+
+  if (!user.add) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Address Required',
+      text: 'Please fill the address field',
+    });
+    return false;
+  }
+
+  if (!user.state) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'State Required',
+      text: 'Please select a state',
+    });
+    return false;
+  }
+
+  if (!user.city) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'City Required',
+      text: 'Please fill the city field',
+    });
+    return false;
+  }
+
+  return true;
+};
+
   useEffect(() => {
   
-    localStorage.setItem("users",JSON.stringify(record));
+    //localStorage.setItem("users",JSON.stringify(record));
+    setlocal("users",record);
   }, [record]);
 
   return (
-    <>
+    <div className="main-layout">
     {!edit ?
     <>
     {/* <h1>The Add Form</h1> */}
+    <div className="left-panel">
+    <h3 className='text-center'>Employee Mangement</h3>
       <Form onSubmit={handleSubmit}>
         <Row className="mb-3">
           <h2>The Registration Form For Add</h2>
@@ -175,10 +270,12 @@ const handleSubmit = (e) => {
           Submit
         </Button>
       </Form>
+      </div>
     </>
 :  
 <>
 {/* <h2>The Edit Form</h2> */}
+<div className="left-panel">
 <Form onSubmit={handleSubmit}>
         <Row className="mb-3">
           <h2>The Registration form For Edit</h2>
@@ -270,8 +367,10 @@ const handleSubmit = (e) => {
           Update
         </Button>
       </Form>
+      </div>
       </>
 }
+<div className="right-panel">
  {record.length ==0 
          ?"No Record please addd first" :
       <table className='table table-bordered mt-4'>
@@ -354,8 +453,8 @@ const handleSubmit = (e) => {
     </table>
   )}
 </div>
-    </>
-
+</div>
+  </div>
   );
 }
 
